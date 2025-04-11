@@ -1,5 +1,6 @@
 import pandas as pd
 import ipywidgets as widgets
+import time
 import sys
 sys.path.insert(0, '..')
 
@@ -49,8 +50,14 @@ def get_client_profile(client_text:str) -> str:
     '''
 
     print('GENERATING THE CLIENT ...\n')
+    start_time = time.time()
+    
     client_factory = TinyPersonFactory(client_text)
     client = client_factory.generate_people(1, verbose=True)[0]
+    
+    duration_seconds = round(time.time() - start_time, 2)
+    print(f'\nAPI request duration: {duration_seconds} seconds.')
+    
     client_profile = str(client.to_json()['persona'])
     return client_profile
 
@@ -70,6 +77,8 @@ def get_recommendations(selected_df:pd.DataFrame, category:str, client_profile:s
     '''
 
     print('\nGENERATING THE AGENTS ...\n')
+    start_time = time.time()
+    
     factory = TinyPersonFactory(f'''
                             People with a broad and diverse range of personalities, interests, backgrounds and socioeconomic status.
                             Focus in particular:
@@ -78,6 +87,11 @@ def get_recommendations(selected_df:pd.DataFrame, category:str, client_profile:s
                             Each of them must have knowledge and experience with {category}.
                             ''')
     agents = factory.generate_people(n_agents, verbose=True)
+
+    duration_seconds = round(time.time() - start_time, 2)
+    print(f'\nAPI request duration: {duration_seconds} seconds.')
+    start_time = time.time()
+    
     world = TinyWorld('Focus group', agents)
 
     print('\n*** STEP 1: Brainstorming ***\n')
@@ -86,11 +100,19 @@ def get_recommendations(selected_df:pd.DataFrame, category:str, client_profile:s
     world.broadcast(step1)
     world.run(1)
 
+    duration_seconds = round(time.time() - start_time, 2)
+    print(f'\nAPI request duration: {duration_seconds} seconds.')
+    start_time = time.time()
+    
     print('\n*** STEP 2: Product selection ***\n')
     step2 = 'Makes its own decision about which product is best for the client. Select **ONLY** one.'
     
     for agent in agents:
         agent.listen_and_act(step2)
+
+    duration_seconds = round(time.time() - start_time, 2)
+    print(f'\nAPI request duration: {duration_seconds} seconds.')
+    start_time = time.time()
 
     print('\n*** STEP 3: Extract the selected product by agent ***\n')
     step3 = 'Find the product the agent chose. Extract the product number and name. Extract only ONE result.'
@@ -106,6 +128,9 @@ def get_recommendations(selected_df:pd.DataFrame, category:str, client_profile:s
                                         verbose=True)
     
         choices.append(res)
+
+    duration_seconds = round(time.time() - start_time, 2)
+    print(f'\nAPI request duration: {duration_seconds} seconds.')
 
     return choices
     
